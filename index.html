@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeTalk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #f9fafb; }
+    .safe-header { background-color: #4f46e5; color: white; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="safe-header p-4 text-center text-2xl font-bold">
+    SafeTalk
+    <p class="text-sm font-normal">Share your thoughts safely</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow p-4 max-w-xl mx-auto w-full">
+    <!-- Post Form -->
+    <section class="bg-white shadow-md rounded-lg p-4 mb-6">
+      <h2 class="text-lg font-semibold mb-2">Share Your Story</h2>
+      <textarea id="postContent" rows="4" placeholder="What's on your mind?" class="w-full p-2 border rounded mb-2"></textarea>
+      <label class="inline-flex items-center mb-2">
+        <input type="checkbox" id="anonymous" class="mr-2"> Post Anonymously
+      </label>
+      <button onclick="addPost()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 w-full">Post</button>
+      <p id="error" class="text-red-500 text-sm mt-2 hidden"></p>
+    </section>
+
+    <!-- Posts Feed -->
+    <section>
+      <h2 class="text-lg font-semibold mb-2">Recent Posts</h2>
+      <div id="postsList" class="space-y-4"></div>
+    </section>
+  </main>
+
+  <footer class="p-4 text-center text-xs text-gray-500">
+    &copy; <span id="year"></span> SafeTalk. Stay kind.
+  </footer>
+
+  <script>
+    const badWords = ["badword1", "badword2", "uglyword"]; // Replace with real list
+    const postsKey = "safeTalkPosts";
+
+    function filterBadWords(text) {
+      let lowered = text.toLowerCase();
+      for (let word of badWords) {
+        if (lowered.includes(word)) return false;
+      }
+      return true;
+    }
+
+    function getPosts() {
+      return JSON.parse(localStorage.getItem(postsKey) || "[]");
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem(postsKey, JSON.stringify(posts));
+    }
+
+    function addPost() {
+      const content = document.getElementById("postContent").value.trim();
+      const anonymous = document.getElementById("anonymous").checked;
+      const error = document.getElementById("error");
+
+      if (!content) {
+        error.textContent = "Post cannot be empty.";
+        error.classList.remove("hidden");
+        return;
+      }
+      if (!filterBadWords(content)) {
+        error.textContent = "Please keep your post respectful.";
+        error.classList.remove("hidden");
+        return;
+      }
+      error.classList.add("hidden");
+
+      const posts = getPosts();
+      posts.unshift({
+        content,
+        author: anonymous ? "Anonymous" : "You",
+        date: new Date().toLocaleString()
+      });
+      savePosts(posts);
+      document.getElementById("postContent").value = "";
+      document.getElementById("anonymous").checked = false;
+      renderPosts();
+    }
+
+    function renderPosts() {
+      const postsList = document.getElementById("postsList");
+      postsList.innerHTML = "";
+      const posts = getPosts();
+      if (posts.length === 0) {
+        postsList.innerHTML = `<p class="text-gray-500">No posts yet. Be the first to share!</p>`;
+        return;
+      }
+      for (let post of posts) {
+        const postEl = document.createElement("div");
+        postEl.className = "bg-white shadow rounded-lg p-4";
+        postEl.innerHTML = `
+          <p class="mb-2">${post.content}</p>
+          <div class="text-xs text-gray-500">By ${post.author} on ${post.date}</div>
+        `;
+        postsList.appendChild(postEl);
+      }
+    }
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    renderPosts();
+  </script>
+</body>
+</html>
